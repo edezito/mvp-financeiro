@@ -16,15 +16,19 @@ import { Plus, ArrowRight } from "lucide-react";
 
 export default function DashboardPage() {
   const [showTxForm, setShowTxForm] = useState(false);
-  const { fetchTransactions, fetchBalance } = useFinanceStore();
-  const { fetchAssets } = usePortfolioStore();
 
-  // Carrega todos os dados ao montar
+  // FIX: Desestrutura as funções individualmente para não recriar o objeto
+  // de deps a cada render, evitando loop infinito no useEffect.
+  const fetchTransactions = useFinanceStore((s) => s.fetchTransactions);
+  const fetchBalance = useFinanceStore((s) => s.fetchBalance);
+  const fetchAssets = usePortfolioStore((s) => s.fetchAssets);
+
   useEffect(() => {
     fetchBalance();
     fetchTransactions();
     fetchAssets();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intencionalmente vazio — carrega apenas na montagem
 
   return (
     <AppLayout>

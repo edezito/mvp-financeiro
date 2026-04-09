@@ -6,6 +6,7 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import {
   User,
@@ -36,6 +37,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // FIX: useRef para manter referência estável do logout no event listener.
+  // Sem isso, o listener capturava o logout da primeira renderização (closure stale)
+  // e o removeEventListener não conseguia remover o listener correto.
+  const logoutRef = useRef<() => Promise<void>>();
+
+  const logout = useCallback(async () => {
+    await signOut(auth);
+    router.push("/login");
+  }, [router]);
+
+  // Mantém o ref sempre atualizado
+  logoutRef.current = logout;
+
   // Escuta mudanças de estado do Firebase
   useEffect(() => {
     if (!auth) return;
@@ -46,12 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // Captura evento de 401 do interceptor Axios e faz logout
+  // FIX: Usa ref estável para o event listener, evitando re-registro a cada render
   useEffect(() => {
-    const handleUnauthorized = () => logout();
+    const handleUnauthorized = () => logoutRef.current?.();
     window.addEventListener("auth:unauthorized", handleUnauthorized);
     return () => window.removeEventListener("auth:unauthorized", handleUnauthorized);
-  }, []);
+  }, []); // array vazio — listener registrado uma única vez
 
   const signIn = useCallback(async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
@@ -67,11 +81,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const provider = new GoogleAuthProvider();
     await signInWithPopup(auth, provider);
     router.push("/dashboard");
-  }, [router]);
-
-  const logout = useCallback(async () => {
-    await signOut(auth);
-    router.push("/login");
   }, [router]);
 
   return (

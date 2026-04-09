@@ -1,8 +1,11 @@
+/* FIX: @import DEVE vir antes das diretivas @tailwind.
+   O PostCSS processa @tailwind primeiro e ignora @import depois,
+   fazendo a fonte Inter não carregar no build de produção. */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 html {
   font-family: "Inter", system-ui, sans-serif;

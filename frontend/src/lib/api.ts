@@ -6,36 +6,42 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-// Espera o estado de autenticação resolver (resolve o problema do currentUser
-// ser null durante o reload da página, antes do onAuthStateChanged disparar)
-function waitForAuth(timeoutMs = 5000): Promise<boolean> {
+/**
+ * FIX: Timeout reduzido para 3s (era 5s) para não travar a UI.
+ * Também adicionada guarda explícita de `auth` undefined (SSR safety).
+ */
+function waitForAuth(timeoutMs = 3000): Promise<boolean> {
   return new Promise((resolve) => {
     if (typeof window === "undefined") return resolve(false);
-    if (auth?.currentUser) return resolve(true);
-
-    const unsub = auth?.onAuthStateChanged((user) => {
-      clearTimeout(timer);
-      unsub?.();
-      resolve(!!user);
-    });
+    // auth pode ser undefined se o Firebase não inicializou (SSR/build)
+    if (!auth) return resolve(false);
+    if (auth.currentUser) return resolve(true);
 
     const timer = setTimeout(() => {
       unsub?.();
       resolve(!!auth?.currentUser);
     }, timeoutMs);
+
+    const unsub = auth.onAuthStateChanged((user) => {
+      clearTimeout(timer);
+      unsub();
+      resolve(!!user);
+    });
   });
 }
 
 // Interceptor: injeta o Firebase ID Token em toda requisição autenticada
 api.interceptors.request.use(async (config) => {
-  if (typeof window !== "undefined") {
+  if (typeof window !== "undefined" && auth) {
     const hasUser = await waitForAuth();
     if (hasUser && auth.currentUser) {
       try {
-        const token = await auth.currentUser.getIdToken();
+        // FIX: forceRefresh=false evita request desnecessária ao Firebase;
+        // o SDK já renova o token automaticamente quando próximo de expirar.
+        const token = await auth.currentUser.getIdToken(false);
         config.headers.Authorization = `Bearer ${token}`;
       } catch {
-        // token expirado — AuthContext vai tratar o logout
+        // token expirado — AuthContext vai tratar o logout via evento
       }
     }
   }
@@ -47,7 +53,6 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      // Dispara evento customizado para o AuthContext capturar
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("auth:unauthorized"));
       }

@@ -12,11 +12,16 @@ import { Plus, X } from "lucide-react";
 
 export default function FinancePage() {
   const [showForm, setShowForm] = useState(false);
-  const { fetchTransactions, fetchBalance } = useFinanceStore();
+
+  // FIX: Seleciona funções individualmente do store para evitar re-renders
+  // desnecessários causados pela desestruturação do objeto inteiro.
+  const fetchTransactions = useFinanceStore((s) => s.fetchTransactions);
+  const fetchBalance = useFinanceStore((s) => s.fetchBalance);
 
   useEffect(() => {
     fetchBalance();
     fetchTransactions();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

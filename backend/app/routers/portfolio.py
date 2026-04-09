@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from decimal import Decimal
 
 from app.core.database import get_db
@@ -63,7 +63,37 @@ async def add_asset(
             total_invested=round(total_invested, 2),
         )
         db.add(asset)
-        db.commit()
+        try:
+            db.commit()
+        except IntegrityError:
+            # FIX: Race condition — outro request inseriu o mesmo ticker
+            # simultaneamente. Faz rollback e tenta o caminho de update.
+            db.rollback()
+            existing = (
+                db.query(Asset)
+                .filter(Asset.user_id == uid, Asset.ticker == ticker)
+                .first()
+            )
+            if not existing:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Erro ao salvar ativo. Tente novamente.",
+                )
+            old_qty = existing.quantity
+            old_pm = existing.avg_price
+            new_qty = payload.quantity
+            new_price = payload.price
+            total_qty = old_qty + new_qty
+            new_avg_price = ((old_qty * old_pm) + (new_qty * new_price)) / total_qty
+            existing.quantity = total_qty
+            existing.avg_price = round(new_avg_price, 6)
+            existing.total_invested = round(total_qty * new_avg_price, 2)
+            if payload.name:
+                existing.name = payload.name
+            db.commit()
+            db.refresh(existing)
+            return existing
+
         db.refresh(asset)
         return asset
 

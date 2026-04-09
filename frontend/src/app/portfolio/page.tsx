@@ -12,10 +12,13 @@ import { Plus, X } from "lucide-react";
 
 export default function PortfolioPage() {
   const [showForm, setShowForm] = useState(false);
-  const { fetchAssets } = usePortfolioStore();
+
+  // FIX: Seleciona a função diretamente para não recriar a referência a cada render
+  const fetchAssets = usePortfolioStore((s) => s.fetchAssets);
 
   useEffect(() => {
     fetchAssets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
