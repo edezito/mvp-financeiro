@@ -19,7 +19,7 @@ export interface Transaction {
   type: TransactionType;
   category: TransactionCategory;
   description: string;
-  amount: string; // Decimal vem como string do Python
+  amount: string;
   date: string;
   created_at: string;
   updated_at: string;
@@ -42,7 +42,7 @@ export interface TransactionCreatePayload {
   category: TransactionCategory;
   description: string;
   amount: number;
-  date: string; // ISO 8601
+  date: string;
 }
 
 // ---- Assets ----
@@ -56,6 +56,16 @@ export interface Asset {
   total_invested: string;
   created_at: string;
   updated_at: string;
+}
+
+// ADICIONE ESTE TIPO AQUI 👇
+export interface EnrichedAsset extends Asset {
+  current_value: number;      // Valor atual do ativo
+  gain_pct: number;           // Percentual de ganho
+  real_pct: number;           // Percentual real
+  weight_pct: number;         // Percentual de peso na carteira
+  change_today_pct: number;   // Variação do dia em percentual
+  current_price?: number;     // Preço atual (opcional)
 }
 
 export interface AssetListResponse {

@@ -1,3 +1,5 @@
+from backend.app.core import cache
+from backend.app.routers import b3, gamification
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -30,6 +32,9 @@ app.add_middleware(
 # --- Routers ---
 app.include_router(finance.router)
 app.include_router(portfolio.router)
+app.include_router(b3.router)
+app.include_router(gamification.router)
+
 
 
 @app.get("/health", tags=["infra"])
@@ -40,6 +45,7 @@ async def health_check():
         "status": "ok" if db_ok else "degraded",
         "database": "connected" if db_ok else "unreachable",
         "environment": settings.ENVIRONMENT,
+        "cache": cache.stats(),
     }
 
 
