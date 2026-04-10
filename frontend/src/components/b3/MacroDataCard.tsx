@@ -29,8 +29,12 @@ export function MacroDataCard() {
     {
       label: "Selic real (Fisher)",
       value: macro ? `${macro.real_yield_fisher.toFixed(2)}%` : "—",
-      color: macro && macro.real_yield_fisher >= 0 ? "text-green-700" : "text-red-700",
-      bg: macro && macro.real_yield_fisher >= 0 ? "bg-green-50" : "bg-red-50",
+      color:
+        macro && macro.real_yield_fisher >= 0
+          ? "text-green-700"
+          : "text-red-700",
+      bg:
+        macro && macro.real_yield_fisher >= 0 ? "bg-green-50" : "bg-red-50",
     },
   ];
 
@@ -55,7 +59,9 @@ export function MacroDataCard() {
             aria-label="Atualizar dados macro"
             className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 disabled:opacity-40"
           >
-            <RefreshCw className={cn("h-3.5 w-3.5", loadingMacro && "animate-spin")} />
+            <RefreshCw
+              className={cn("h-3.5 w-3.5", loadingMacro && "animate-spin")}
+            />
           </button>
         </div>
       </div>
@@ -82,7 +88,8 @@ export function MacroDataCard() {
       </div>
 
       <div className="mt-4 rounded-lg bg-blue-50 p-3 text-xs text-blue-700">
-        <strong>Equação de Fisher:</strong> r_real = ((1 + r_nominal) / (1 + IPCA)) − 1
+        <strong>Equação de Fisher:</strong> r_real = ((1 + r_nominal) / (1 +
+        IPCA)) − 1
       </div>
     </div>
   );

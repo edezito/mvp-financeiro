@@ -32,14 +32,19 @@ const TABS: { id: Tab; label: string; icon: typeof BarChart3 }[] = [
 
 export default function B3Page() {
   const [activeTab, setActiveTab] = useState<Tab>("overview");
-  const [focusTicker, setFocusTicker] = useState<string | null>(null);
 
-  const { fetchPortfolio, fetchMacro, fetchIpcaHistory, fetchPortfolioDividends, error, clearError } =
-    useB3Store();
+  const {
+    fetchPortfolio,
+    fetchMacro,
+    fetchIpcaHistory,
+    fetchPortfolioDividends,
+    error,
+    clearError,
+  } = useB3Store();
+
   const { fetchStreak, fetchGoals, recordActivity } = useGamificationStore();
 
   useEffect(() => {
-    // Carrega tudo em paralelo
     Promise.all([
       fetchPortfolio(),
       fetchMacro(),
@@ -48,8 +53,8 @@ export default function B3Page() {
       fetchStreak(),
       fetchGoals(),
     ]);
-    // Registra visita ao painel — pontua o streak
     recordActivity("portfolio_check");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -67,22 +72,20 @@ export default function B3Page() {
 
         {error && <ErrorAlert message={error} onClose={clearError} />}
 
-        {/* Barra de status em tempo real */}
         <LivePriceBar />
-
-        {/* Patrimônio total — sempre visível (divulgação progressiva L1) */}
         <B3PatrimonySummary />
 
-        {/* Top 3 altas/baixas — divulgação progressiva L2 */}
         <Card>
           <p className="mb-4 text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Activity className="h-4 w-4 text-brand-600" aria-hidden />
             Destaques do portfólio
           </p>
-          <TopPerformers onAssetClick={(t) => { setFocusTicker(t); setActiveTab("overview"); }} />
+          <TopPerformers
+            onAssetClick={() => setActiveTab("overview")}
+          />
         </Card>
 
-        {/* Abas para drill-down — divulgação progressiva L3 */}
+        {/* Abas */}
         <div>
           <div
             className="mb-4 flex gap-1 overflow-x-auto rounded-xl border border-gray-200 bg-gray-50 p-1"
@@ -109,13 +112,7 @@ export default function B3Page() {
             ))}
           </div>
 
-          {/* Visão geral — tabela completa */}
-          <div
-            id="tabpanel-overview"
-            role="tabpanel"
-            aria-labelledby="tab-overview"
-            hidden={activeTab !== "overview"}
-          >
+          <div id="tabpanel-overview" role="tabpanel" hidden={activeTab !== "overview"}>
             {activeTab === "overview" && (
               <Card>
                 <p className="mb-4 text-sm font-semibold text-gray-700">
@@ -126,12 +123,7 @@ export default function B3Page() {
             )}
           </div>
 
-          {/* Gráficos */}
-          <div
-            id="tabpanel-charts"
-            role="tabpanel"
-            hidden={activeTab !== "charts"}
-          >
+          <div id="tabpanel-charts" role="tabpanel" hidden={activeTab !== "charts"}>
             {activeTab === "charts" && (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <Card><PortfolioAllocationChart /></Card>
@@ -141,28 +133,16 @@ export default function B3Page() {
             )}
           </div>
 
-          {/* Macro */}
-          <div
-            id="tabpanel-macro"
-            role="tabpanel"
-            hidden={activeTab !== "macro"}
-          >
+          <div id="tabpanel-macro" role="tabpanel" hidden={activeTab !== "macro"}>
             {activeTab === "macro" && (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
                 <MacroDataCard />
-                <Card>
-                  <IpcaHistoryChart />
-                </Card>
+                <Card><IpcaHistoryChart /></Card>
               </div>
             )}
           </div>
 
-          {/* Metas e Streak */}
-          <div
-            id="tabpanel-goals"
-            role="tabpanel"
-            hidden={activeTab !== "goals"}
-          >
+          <div id="tabpanel-goals" role="tabpanel" hidden={activeTab !== "goals"}>
             {activeTab === "goals" && (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
                 <div className="lg:col-span-1">

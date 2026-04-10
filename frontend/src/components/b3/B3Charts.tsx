@@ -1,19 +1,33 @@
 "use client";
 
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  BarChart, Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  BarChart,
+  Bar,
 } from "recharts";
 import { useB3Store } from "@/contexts/b3Store";
 import { formatCurrency } from "@/lib/utils";
 
-// ─────────────────────────────────────────────
-//  Paleta acessível (WCAG AA — contraste ≥ 4.5:1 sobre branco)
-// ─────────────────────────────────────────────
+// Paleta acessível (WCAG AA — contraste ≥ 4.5:1 sobre branco)
 const PALETTE = [
-  "#4f46e5", "#0891b2", "#059669", "#d97706",
-  "#dc2626", "#7c3aed", "#db2777", "#65a30d",
+  "#4f46e5",
+  "#0891b2",
+  "#059669",
+  "#d97706",
+  "#dc2626",
+  "#7c3aed",
+  "#db2777",
+  "#65a30d",
 ];
 
 // ─────────────────────────────────────────────
@@ -118,6 +132,7 @@ export function AssetGainChart() {
 // ─────────────────────────────────────────────
 
 export function IpcaHistoryChart() {
+  // ipcaHistory agora existe no b3Store consolidado
   const { ipcaHistory } = useB3Store();
   if (!ipcaHistory.length) return null;
 

@@ -25,7 +25,8 @@ export function LivePriceBar() {
     await recordActivity("portfolio_check");
   };
 
-  const cachedCount = portfolio?.assets.filter((a) => a.quote_available).length ?? 0;
+  const cachedCount =
+    portfolio?.assets.filter((a) => a.quote_available).length ?? 0;
   const totalCount = portfolio?.assets.length ?? 0;
 
   const freshness =

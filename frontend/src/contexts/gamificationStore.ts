@@ -2,121 +2,99 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import api from "@/lib/api";
+import type { StreakData, InvestmentGoal, GoalCreatePayload } from "@/lib/types";
 
-interface GamificationStoreState {
-  // Streak data
-  streak: {
-    current_streak: number;
-    longest_streak: number;
-    total_points: number;
-    badge: any;
-  } | null;
-
-  // Investment goals
-  goals: any[];
-
-  // Loading states
-  loading: {
-    streak: boolean;
-    goals: boolean;
-  };
-
-  // Errors
+interface GamificationState {
+  streak: StreakData | null;
+  goals: InvestmentGoal[];
+  // Tipagem simples — compatível com todos os componentes que usam `loading` como boolean
+  loading: boolean;
   error: string | null;
 
-  // Actions
   fetchStreak: () => Promise<void>;
   fetchGoals: () => Promise<void>;
+  createGoal: (payload: GoalCreatePayload) => Promise<void>;
+  updateGoalValue: (goalId: string, currentValue: number) => Promise<void>;
   recordActivity: (action: string) => Promise<void>;
   clearError: () => void;
 }
 
-export const useGamificationStore = create<GamificationStoreState>()(
+export const useGamificationStore = create<GamificationState>()(
   devtools(
     (set, get) => ({
-      // Initial state
       streak: null,
       goals: [],
-      loading: {
-        streak: false,
-        goals: false,
-      },
+      loading: false,
       error: null,
 
-      // Actions
       fetchStreak: async () => {
-        set((state) => ({
-          loading: { ...state.loading, streak: true },
-          error: null
-        }));
-
         try {
-          const response = await fetch("/api/v1/b3/streak", {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch streak");
-          }
-
-          const data = await response.json();
-          set({ streak: data, loading: { ...get().loading, streak: false } });
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, streak: false }
-          });
+          const { data } = await api.get<StreakData>(
+            "/api/v1/gamification/streak"
+          );
+          set({ streak: data });
+        } catch {
+          // silencioso — streak é complementar
         }
       },
 
       fetchGoals: async () => {
-        set((state) => ({
-          loading: { ...state.loading, goals: true },
-          error: null
-        }));
-
+        set({ loading: true, error: null });
         try {
-          const response = await fetch("/api/v1/b3/goals", {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch goals");
-          }
-
-          const data = await response.json();
-          set({ goals: data, loading: { ...get().loading, goals: false } });
-        } catch (error) {
+          const { data } = await api.get<InvestmentGoal[]>(
+            "/api/v1/gamification/goals"
+          );
+          set({ goals: data });
+        } catch (err: any) {
           set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, goals: false }
+            error: err.response?.data?.detail ?? "Erro ao buscar metas.",
           });
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      createGoal: async (payload: GoalCreatePayload) => {
+        set({ loading: true, error: null });
+        try {
+          await api.post("/api/v1/gamification/goals", payload);
+          await get().fetchGoals();
+        } catch (err: any) {
+          set({
+            error: err.response?.data?.detail ?? "Erro ao criar meta.",
+          });
+          throw err;
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      updateGoalValue: async (goalId: string, currentValue: number) => {
+        try {
+          await api.patch(`/api/v1/gamification/goals/${goalId}`, {
+            current_value: currentValue,
+          });
+          await get().fetchGoals();
+        } catch {
+          // silencioso
         }
       },
 
       recordActivity: async (action: string) => {
         try {
-          await fetch("/api/v1/b3/activities", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-            body: JSON.stringify({ action }),
-          });
-        } catch (error) {
-          console.error("Failed to record activity:", error);
+          const { data } = await api.post<StreakData>(
+            "/api/v1/gamification/streak/activity",
+            { action }
+          );
+          set({ streak: data });
+        } catch {
+          // silencioso
         }
       },
 
       clearError: () => set({ error: null }),
     }),
-    {
-      name: "gamification-store",
-    }
+    { name: "gamification-store" }
   )
 );

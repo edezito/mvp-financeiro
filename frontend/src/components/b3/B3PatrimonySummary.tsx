@@ -4,7 +4,11 @@ import { useB3Store } from "@/contexts/b3Store";
 import { formatCurrency } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import {
-  TrendingUp, TrendingDown, DollarSign, BarChart2, Percent, Landmark,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Percent,
+  Landmark,
 } from "lucide-react";
 
 export function B3PatrimonySummary() {
@@ -36,7 +40,10 @@ export function B3PatrimonySummary() {
       sub: `IPCA 12m: ${macro?.ipca_12m?.toFixed(2) ?? "—"}%`,
       icon: Percent,
       iconBg: (s?.total_real_pct ?? 0) >= 0 ? "bg-emerald-50" : "bg-orange-50",
-      iconColor: (s?.total_real_pct ?? 0) >= 0 ? "text-emerald-600" : "text-orange-600",
+      iconColor:
+        (s?.total_real_pct ?? 0) >= 0
+          ? "text-emerald-600"
+          : "text-orange-600",
       trend: (s?.total_real_pct ?? 0) >= 0 ? "up" : "down",
     },
     {

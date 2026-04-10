@@ -2,31 +2,35 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import api from "@/lib/api";
+import type {
+  EnrichedPortfolioResponse,
+  MacroData,
+  IpcaHistoryItem,
+  DividendItem,
+} from "@/lib/types";
 
 interface B3StoreState {
-  // Portfolio data
-  portfolio: {
-    assets: any[];
-    summary: any;
-    ranking: any;
-    macro: any;
-  } | null;
+  // Portfolio enriquecido com métricas
+  portfolio: EnrichedPortfolioResponse | null;
+  // Dados macroeconômicos (SELIC, IPCA)
+  macro: MacroData | null;
+  // Histórico mensal do IPCA
+  ipcaHistory: IpcaHistoryItem[];
+  // Dividendos por ticker
+  dividends: Record<string, DividendItem[]>;
 
   // Loading states
-  loading: {
-    portfolio: boolean;
-    macro: boolean;
-    ipcaHistory: boolean;
-    dividends: boolean;
-  };
-
-  // Errors
+  loading: boolean;
+  loadingMacro: boolean;
   error: string | null;
+  lastUpdated: Date | null;
 
   // Actions
   fetchPortfolio: () => Promise<void>;
   fetchMacro: () => Promise<void>;
-  fetchIpcaHistory: (months: number) => Promise<void>;
+  fetchIpcaHistory: (months?: number) => Promise<void>;
+  fetchDividends: (ticker: string) => Promise<void>;
   fetchPortfolioDividends: () => Promise<void>;
   clearError: () => void;
 }
@@ -34,134 +38,83 @@ interface B3StoreState {
 export const useB3Store = create<B3StoreState>()(
   devtools(
     (set, get) => ({
-      // Initial state
       portfolio: null,
-      loading: {
-        portfolio: false,
-        macro: false,
-        ipcaHistory: false,
-        dividends: false,
-      },
+      macro: null,
+      ipcaHistory: [],
+      dividends: {},
+      loading: false,
+      loadingMacro: false,
       error: null,
+      lastUpdated: null,
 
-      // Actions
       fetchPortfolio: async () => {
-        set((state) => ({
-          loading: { ...state.loading, portfolio: true },
-          error: null
-        }));
-
+        set({ loading: true, error: null });
         try {
-          const response = await fetch("/api/v1/b3/portfolio", {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch portfolio");
-          }
-
-          const data = await response.json();
-          set({ portfolio: data, loading: { ...get().loading, portfolio: false } });
-        } catch (error) {
+          const { data } = await api.get<EnrichedPortfolioResponse>(
+            "/api/v1/b3/portfolio"
+          );
+          set({ portfolio: data, lastUpdated: new Date() });
+        } catch (err: any) {
           set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, portfolio: false }
+            error: err.response?.data?.detail ?? "Erro ao buscar portfólio B3.",
           });
+        } finally {
+          set({ loading: false });
         }
       },
 
       fetchMacro: async () => {
-        set((state) => ({
-          loading: { ...state.loading, macro: true },
-          error: null
-        }));
-
+        set({ loadingMacro: true });
         try {
-          const response = await fetch("/api/v1/b3/macro", {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch macro data");
-          }
-
-          const data = await response.json();
-          set((state) => ({
-            portfolio: state.portfolio ? { ...state.portfolio, macro: data } : null,
-            loading: { ...get().loading, macro: false }
-          }));
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, macro: false }
-          });
+          const { data } = await api.get<MacroData>("/api/v1/b3/macro");
+          set({ macro: data });
+        } catch {
+          // silencioso — macro é complementar
+        } finally {
+          set({ loadingMacro: false });
         }
       },
 
-      fetchIpcaHistory: async (months: number) => {
-        set((state) => ({
-          loading: { ...state.loading, ipcaHistory: true },
-          error: null
-        }));
-
+      fetchIpcaHistory: async (months = 12) => {
         try {
-          const response = await fetch(`/api/v1/b3/macro/ipca-history?months=${months}`, {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
+          const { data } = await api.get<IpcaHistoryItem[]>(
+            `/api/v1/b3/macro/ipca-history?months=${months}`
+          );
+          set({ ipcaHistory: data });
+        } catch {
+          // silencioso
+        }
+      },
+
+      fetchDividends: async (ticker: string) => {
+        try {
+          const { data } = await api.get<DividendItem[]>(
+            `/api/v1/b3/dividends/${ticker.toUpperCase()}`
+          );
+          set((s) => ({
+            dividends: {
+              ...s.dividends,
+              [ticker.toUpperCase()]: data,
             },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch IPCA history");
-          }
-
-          const data = await response.json();
-          // Store in state if needed
-          set({ loading: { ...get().loading, ipcaHistory: false } });
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, ipcaHistory: false }
-          });
+          }));
+        } catch {
+          // silencioso
         }
       },
 
       fetchPortfolioDividends: async () => {
-        set((state) => ({
-          loading: { ...state.loading, dividends: true },
-          error: null
-        }));
-
         try {
-          const response = await fetch("/api/v1/b3/dividends", {
-            headers: {
-              "Authorization": `Bearer ${localStorage.getItem("firebase_token")}`,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error("Failed to fetch dividends");
-          }
-
-          const data = await response.json();
-          // Store in state if needed
-          set({ loading: { ...get().loading, dividends: false } });
-        } catch (error) {
-          set({
-            error: error instanceof Error ? error.message : "Unknown error",
-            loading: { ...get().loading, dividends: false }
-          });
+          const { data } = await api.get<Record<string, DividendItem[]>>(
+            "/api/v1/b3/dividends"
+          );
+          set({ dividends: data });
+        } catch {
+          // silencioso
         }
       },
 
       clearError: () => set({ error: null }),
     }),
-    {
-      name: "b3-store",
-    }
+    { name: "b3-store" }
   )
 );

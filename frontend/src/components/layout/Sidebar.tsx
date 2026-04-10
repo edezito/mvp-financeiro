@@ -11,6 +11,7 @@ import {
   LogOut,
   TrendingUp,
   ChevronRight,
+  BarChart3,
 } from "lucide-react";
 
 const navItems = [
@@ -28,6 +29,11 @@ const navItems = [
     label: "Portfólio",
     href: "/portfolio",
     icon: BriefcaseBusiness,
+  },
+  {
+    label: "Monitor B3",
+    href: "/b3",
+    icon: BarChart3,
   },
 ];
 
@@ -63,7 +69,9 @@ export function Sidebar() {
               <item.icon
                 className={cn(
                   "h-4 w-4 flex-shrink-0",
-                  active ? "text-brand-600" : "text-gray-400 group-hover:text-gray-600"
+                  active
+                    ? "text-brand-600"
+                    : "text-gray-400 group-hover:text-gray-600"
                 )}
               />
               <span className="flex-1">{item.label}</span>
