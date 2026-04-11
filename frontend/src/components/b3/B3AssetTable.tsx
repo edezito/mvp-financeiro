@@ -51,7 +51,7 @@ function ExpandedRow({ asset }: ExpandedRowProps) {
           <div>
             <p className="text-gray-400">Qtd. de ativos</p>
             <p className="font-semibold text-gray-800">
-              {asset.quantity.toLocaleString("pt-BR", { maximumFractionDigits: 6 })}
+              {(Number(asset.quantity)).toLocaleString("pt-BR", { maximumFractionDigits: 6 })}
             </p>
           </div>
           <div>
