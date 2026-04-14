@@ -80,3 +80,28 @@ export interface AssetCreatePayload {
   quantity: number;
   price: number;
 }
+
+// ─────────────────────────────────────────────
+//  Contexto de Mercado (Finnhub)
+//  Adicione este bloco ao final de src/lib/types.ts
+// ─────────────────────────────────────────────
+
+export type MarketSentiment = "bullish" | "bearish" | "neutral";
+
+export interface MarketNewsItem {
+  headline: string;
+  source: string;
+  url: string;
+  /** Unix timestamp em segundos */
+  datetime: number;
+  summary: string;
+}
+
+export interface MarketContext {
+  ticker: string;
+  sentiment: MarketSentiment;
+  sentiment_label: string;
+  news: MarketNewsItem[];
+  source: "finnhub" | "fallback";
+  cached: boolean;
+}

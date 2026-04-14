@@ -1,13 +1,17 @@
-from backend.app.core import cache
-from backend.app.routers import b3, gamification
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import Base, engine, check_db_connection
+from app.core.cache import cache
+
+# Importar TODOS os modelos para o metadata criar as tabelas
 from app.models.transaction import Transaction, TransactionType
 from app.models.asset import Asset
-from app.routers import finance, portfolio
+from app.models.investment_goal import InvestmentGoal
+from app.models.activity_streak import ActivityStreak
+
+from app.routers import finance, portfolio, b3, gamification, market_context  # ← novo
 
 # Cria tabelas automaticamente no banco (idempotente)
 Base.metadata.create_all(bind=engine)
@@ -34,7 +38,7 @@ app.include_router(finance.router)
 app.include_router(portfolio.router)
 app.include_router(b3.router)
 app.include_router(gamification.router)
-
+app.include_router(market_context.router)  # ← novo
 
 
 @app.get("/health", tags=["infra"])
